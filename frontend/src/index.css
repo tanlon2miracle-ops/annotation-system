@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+/* ── Animated gradient background ── */
+@keyframes blob-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25%      { transform: translate(30px, -50px) scale(1.1); }
+  50%      { transform: translate(-20px, 20px) scale(0.95); }
+  75%      { transform: translate(40px, 30px) scale(1.05); }
+}
+
+.bg-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(80px);
+  opacity: 0.35;
+  pointer-events: none;
+  will-change: transform;
+  animation: blob-drift 20s ease-in-out infinite;
+}
+
+.bg-blob-1 {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, #818cf8, #6366f1);
+  top: -80px; left: -100px;
+  animation-delay: 0s;
+}
+
+.bg-blob-2 {
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, #38bdf8, #0ea5e9);
+  bottom: -60px; right: -80px;
+  animation-delay: -7s;
+}
+
+.bg-blob-3 {
+  width: 350px; height: 350px;
+  background: radial-gradient(circle, #a78bfa, #8b5cf6);
+  top: 40%; left: 50%;
+  animation-delay: -13s;
+}
+
+/* Glass card utility */
+.glass {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px) saturate(1.8);
+  -webkit-backdrop-filter: blur(16px) saturate(1.8);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
