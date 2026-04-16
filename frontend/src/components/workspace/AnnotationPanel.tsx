@@ -3,18 +3,32 @@ import { useSessionStore } from '../../stores/sessionStore'
 import { useUIStore } from '../../stores/uiStore'
 
 export function AnnotationPanel() {
-  const store = useAnnotationStore()
-  const sessionStore = useSessionStore()
-  const { reasons } = useUIStore()
-  const item = store.items[store.currentIndex]
+  // Granular selectors — only re-render when specific slices change
+  const items = useAnnotationStore(s => s.items)
+  const currentIndex = useAnnotationStore(s => s.currentIndex)
+  const batchMode = useAnnotationStore(s => s.batchMode)
+  const draftResult = useAnnotationStore(s => s.draftResult)
+  const draftReason = useAnnotationStore(s => s.draftReason)
+  const draftNotes = useAnnotationStore(s => s.draftNotes)
+  const setResult = useAnnotationStore(s => s.setResult)
+  const setReason = useAnnotationStore(s => s.setReason)
+  const setNotes = useAnnotationStore(s => s.setNotes)
+  const confirmAndNext = useAnnotationStore(s => s.confirmAndNext)
+  const skipItem = useAnnotationStore(s => s.skipItem)
+  const flagItem = useAnnotationStore(s => s.flagItem)
+  const sessionId = useAnnotationStore(s => s.sessionId)
+  const fetchProgress = useSessionStore(s => s.fetchProgress)
+  const reasons = useUIStore(s => s.reasons)
 
-  if (!item && !store.batchMode) {
+  const item = items[currentIndex]
+
+  if (!item && !batchMode) {
     return <div className="glass rounded-xl" />
   }
 
   const ann = item?.annotation
 
-  if (store.batchMode) {
+  if (batchMode) {
     return <BatchPanel />
   }
 
@@ -25,22 +39,22 @@ export function AnnotationPanel() {
         <div className="grid grid-cols-2 gap-2">
           <button
             className={`py-3 rounded-lg text-sm font-bold transition-all ${
-              store.draftResult === '是'
+              draftResult === '是'
                 ? 'bg-green-500 text-white ring-2 ring-green-300'
                 : 'bg-gray-100 text-gray-700 hover:bg-green-50'
             }`}
-            onClick={() => store.setResult('是')}
+            onClick={() => setResult('是')}
           >
             YES
             <span className="block text-xs font-normal opacity-60 mt-0.5">Y</span>
           </button>
           <button
             className={`py-3 rounded-lg text-sm font-bold transition-all ${
-              store.draftResult === '否'
+              draftResult === '否'
                 ? 'bg-red-500 text-white ring-2 ring-red-300'
                 : 'bg-gray-100 text-gray-700 hover:bg-red-50'
             }`}
-            onClick={() => store.setResult('否')}
+            onClick={() => setResult('否')}
           >
             NO
             <span className="block text-xs font-normal opacity-60 mt-0.5">N</span>
@@ -55,11 +69,11 @@ export function AnnotationPanel() {
             <button
               key={r.id}
               className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${
-                store.draftReason === r.value
+                draftReason === r.value
                   ? 'bg-blue-100 text-blue-800 ring-1 ring-blue-300'
                   : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
               }`}
-              onClick={() => store.setReason(r.value)}
+              onClick={() => setReason(r.value)}
             >
               <span className="text-xs text-gray-400 mr-1.5">{i + 1}</span>
               {r.label}
@@ -73,18 +87,18 @@ export function AnnotationPanel() {
         <textarea
           className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm resize-none h-16"
           placeholder="添加备注..."
-          value={store.draftNotes}
-          onChange={(e) => store.setNotes(e.target.value)}
+          value={draftNotes}
+          onChange={(e) => setNotes(e.target.value)}
         />
       </div>
 
       <div className="space-y-2 mt-auto pt-4 border-t border-gray-100">
         <button
           className="w-full bg-gray-900 text-white py-2.5 rounded-md text-sm font-medium hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
-          disabled={!store.draftResult}
+          disabled={!draftResult}
           onClick={() => {
-            store.confirmAndNext().then(() => {
-              if (store.sessionId) sessionStore.fetchProgress(store.sessionId)
+            confirmAndNext().then(() => {
+              if (sessionId) fetchProgress(sessionId)
             })
           }}
         >
@@ -95,8 +109,8 @@ export function AnnotationPanel() {
           <button
             className="bg-yellow-50 text-yellow-700 py-2 rounded-md text-sm hover:bg-yellow-100"
             onClick={() => {
-              store.skipItem().then(() => {
-                if (store.sessionId) sessionStore.fetchProgress(store.sessionId)
+              skipItem().then(() => {
+                if (sessionId) fetchProgress(sessionId)
               })
             }}
           >
@@ -108,7 +122,7 @@ export function AnnotationPanel() {
                 ? 'bg-red-100 text-red-700'
                 : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
             }`}
-            onClick={() => store.flagItem()}
+            onClick={() => flagItem()}
           >
             {ann?.is_flagged ? '取消标记' : '标记'}
             <span className="text-xs opacity-60 ml-1">F</span>
@@ -120,10 +134,17 @@ export function AnnotationPanel() {
 }
 
 function BatchPanel() {
-  const store = useAnnotationStore()
-  const sessionStore = useSessionStore()
-  const { reasons } = useUIStore()
-  const count = store.selectedIds.size
+  const draftResult = useAnnotationStore(s => s.draftResult)
+  const draftReason = useAnnotationStore(s => s.draftReason)
+  const setResult = useAnnotationStore(s => s.setResult)
+  const setReason = useAnnotationStore(s => s.setReason)
+  const selectedIds = useAnnotationStore(s => s.selectedIds)
+  const batchAnnotate = useAnnotationStore(s => s.batchAnnotate)
+  const batchSkip = useAnnotationStore(s => s.batchSkip)
+  const sessionId = useAnnotationStore(s => s.sessionId)
+  const fetchProgress = useSessionStore(s => s.fetchProgress)
+  const reasons = useUIStore(s => s.reasons)
+  const count = selectedIds.size
 
   return (
     <div className="flex flex-col glass rounded-xl p-4 space-y-4 overflow-y-auto">
@@ -139,21 +160,21 @@ function BatchPanel() {
         <div className="grid grid-cols-2 gap-2">
           <button
             className={`py-3 rounded-lg text-sm font-bold transition-all ${
-              store.draftResult === '是'
+              draftResult === '是'
                 ? 'bg-green-500 text-white ring-2 ring-green-300'
                 : 'bg-gray-100 text-gray-700 hover:bg-green-50'
             }`}
-            onClick={() => store.setResult('是')}
+            onClick={() => setResult('是')}
           >
             全部 YES
           </button>
           <button
             className={`py-3 rounded-lg text-sm font-bold transition-all ${
-              store.draftResult === '否'
+              draftResult === '否'
                 ? 'bg-red-500 text-white ring-2 ring-red-300'
                 : 'bg-gray-100 text-gray-700 hover:bg-red-50'
             }`}
-            onClick={() => store.setResult('否')}
+            onClick={() => setResult('否')}
           >
             全部 NO
           </button>
@@ -167,11 +188,11 @@ function BatchPanel() {
             <button
               key={r.id}
               className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${
-                store.draftReason === r.value
+                draftReason === r.value
                   ? 'bg-blue-100 text-blue-800 ring-1 ring-blue-300'
                   : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
               }`}
-              onClick={() => store.setReason(r.value)}
+              onClick={() => setReason(r.value)}
             >
               <span className="text-xs text-gray-400 mr-1.5">{i + 1}</span>
               {r.label}
@@ -183,10 +204,10 @@ function BatchPanel() {
       <div className="space-y-2 mt-auto pt-4 border-t border-gray-100">
         <button
           className="w-full bg-indigo-600 text-white py-2.5 rounded-md text-sm font-medium hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed"
-          disabled={!store.draftResult || count === 0}
+          disabled={!draftResult || count === 0}
           onClick={() => {
-            store.batchAnnotate(store.draftResult!, store.draftReason).then(() => {
-              if (store.sessionId) sessionStore.fetchProgress(store.sessionId)
+            batchAnnotate(draftResult!, draftReason).then(() => {
+              if (sessionId) fetchProgress(sessionId)
             })
           }}
         >
@@ -196,8 +217,8 @@ function BatchPanel() {
           className="w-full bg-yellow-50 text-yellow-700 py-2 rounded-md text-sm hover:bg-yellow-100 disabled:opacity-40 disabled:cursor-not-allowed"
           disabled={count === 0}
           onClick={() => {
-            store.batchSkip().then(() => {
-              if (store.sessionId) sessionStore.fetchProgress(store.sessionId)
+            batchSkip().then(() => {
+              if (sessionId) fetchProgress(sessionId)
             })
           }}
         >

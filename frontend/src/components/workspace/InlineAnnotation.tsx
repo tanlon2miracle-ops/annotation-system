@@ -11,9 +11,9 @@ interface InlineAnnotationProps {
 }
 
 export function InlineAnnotation({ item, onUpdated }: InlineAnnotationProps) {
-  const { sessionId } = useAnnotationStore()
-  const sessionStore = useSessionStore()
-  const { reasons } = useUIStore()
+  const sessionId = useAnnotationStore(s => s.sessionId)
+  const fetchProgress = useSessionStore(s => s.fetchProgress)
+  const reasons = useUIStore(s => s.reasons)
 
   const ann = item.annotation
   const [result, setResult] = useState<string | null>(ann?.result ?? null)
@@ -31,11 +31,11 @@ export function InlineAnnotation({ item, onUpdated }: InlineAnnotationProps) {
         reason: rsn,
       })
       onUpdated(item.id, saved)
-      if (sessionId) sessionStore.fetchProgress(sessionId)
+      if (sessionId) fetchProgress(sessionId)
     } finally {
       setSaving(false)
     }
-  }, [sessionId, item.id, onUpdated, sessionStore])
+  }, [sessionId, item.id, onUpdated, fetchProgress])
 
   const handleResult = useCallback((val: string) => {
     setResult(val)

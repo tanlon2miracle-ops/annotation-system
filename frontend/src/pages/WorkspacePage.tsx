@@ -27,9 +27,17 @@ const MODE_COLORS: Record<AnnotationMode, string> = {
 
 export function WorkspacePage() {
   const { sessionId } = useParams<{ sessionId: string }>()
-  const store = useAnnotationStore()
-  const sessionStore = useSessionStore()
-  const uiStore = useUIStore()
+
+  // Granular selectors — each component only re-renders when its slice changes
+  const mode = useAnnotationStore(s => s.mode)
+  const setSession = useAnnotationStore(s => s.setSession)
+  const loadItems = useAnnotationStore(s => s.loadItems)
+  const setActiveSession = useSessionStore(s => s.setActiveSession)
+  const fetchProgress = useSessionStore(s => s.fetchProgress)
+  const fetchReasons = useUIStore(s => s.fetchReasons)
+  const viewMode = useUIStore(s => s.viewMode)
+  const setViewMode = useUIStore(s => s.setViewMode)
+  const showShortcutHints = useUIStore(s => s.showShortcutHints)
 
   useKeyboardShortcuts()
 
@@ -39,20 +47,19 @@ export function WorkspacePage() {
 
     async function init() {
       const sess = await api.get<SessionData>(`/sessions/${id}`)
-      store.setSession(id, sess.mode)
-      sessionStore.setActiveSession(sess)
+      setSession(id, sess.mode)
+      setActiveSession(sess)
       await Promise.all([
-        store.loadItems(1),
-        sessionStore.fetchProgress(id),
-        uiStore.fetchReasons(),
+        loadItems(1),
+        fetchProgress(id),
+        fetchReasons(),
       ])
     }
     init()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId])
 
-  const mode = store.mode
-  const isGrid = uiStore.viewMode === 'grid'
+  const isGrid = viewMode === 'grid'
 
   return (
     <div className="h-full flex flex-col p-2 gap-2">
@@ -67,7 +74,7 @@ export function WorkspacePage() {
             className={`px-2.5 py-1 text-xs rounded transition-colors ${
               !isGrid ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
             }`}
-            onClick={() => uiStore.setViewMode('single')}
+            onClick={() => setViewMode('single')}
           >
             单条
           </button>
@@ -75,7 +82,7 @@ export function WorkspacePage() {
             className={`px-2.5 py-1 text-xs rounded transition-colors ${
               isGrid ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
             }`}
-            onClick={() => uiStore.setViewMode('grid')}
+            onClick={() => setViewMode('grid')}
           >
             多条
           </button>
@@ -98,7 +105,7 @@ export function WorkspacePage() {
 
       <div className="shrink-0 glass rounded-xl">
         <ProgressBar />
-        {uiStore.showShortcutHints && !isGrid && <ShortcutHints />}
+        {showShortcutHints && !isGrid && <ShortcutHints />}
       </div>
     </div>
   )

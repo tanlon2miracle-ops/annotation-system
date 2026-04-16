@@ -3,11 +3,12 @@ import { useAnnotationStore } from '../stores/annotationStore'
 import { useUIStore } from '../stores/uiStore'
 import { useSessionStore } from '../stores/sessionStore'
 
+/**
+ * Keyboard shortcuts for annotation workflow.
+ * Uses getState() to read store values at event time,
+ * avoiding subscriptions that cause unnecessary re-renders.
+ */
 export function useKeyboardShortcuts() {
-  const store = useAnnotationStore()
-  const uiStore = useUIStore()
-  const sessionStore = useSessionStore()
-
   useEffect(() => {
     let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -21,52 +22,56 @@ export function useKeyboardShortcuts() {
       debounceTimer = setTimeout(() => { debounceTimer = null }, 100)
 
       const key = e.key.toLowerCase()
+      // Read store values at event time — no subscription needed
+      const annStore = useAnnotationStore.getState()
+      const uiStore = useUIStore.getState()
+      const sessionStore = useSessionStore.getState()
 
       if (key === 'y') {
         e.preventDefault()
-        store.setResult('是')
+        annStore.setResult('是')
       } else if (key === 'n') {
         e.preventDefault()
-        store.setResult('否')
+        annStore.setResult('否')
       } else if (key === 'enter') {
         e.preventDefault()
-        store.confirmAndNext().then(() => {
-          if (store.sessionId) sessionStore.fetchProgress(store.sessionId)
+        annStore.confirmAndNext().then(() => {
+          if (annStore.sessionId) sessionStore.fetchProgress(annStore.sessionId)
         })
       } else if (key === 's') {
         e.preventDefault()
-        store.skipItem().then(() => {
-          if (store.sessionId) sessionStore.fetchProgress(store.sessionId)
+        annStore.skipItem().then(() => {
+          if (annStore.sessionId) sessionStore.fetchProgress(annStore.sessionId)
         })
       } else if (key === 'f') {
         e.preventDefault()
-        store.flagItem()
+        annStore.flagItem()
       } else if (key === 'arrowleft' || key === 'k') {
         e.preventDefault()
-        store.navigatePrev()
+        annStore.navigatePrev()
       } else if (key === 'arrowright' || key === 'j') {
         e.preventDefault()
-        store.navigateNext()
+        annStore.navigateNext()
       } else if (key === '?' || key === '/') {
         e.preventDefault()
         uiStore.toggleShortcutHints()
       } else if (key === 'escape') {
         e.preventDefault()
-        store.clearDraft()
+        annStore.clearDraft()
       } else if (key === 'z' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault()
-        store.undoLast()
+        annStore.undoLast()
       } else if (/^[1-9]$/.test(key)) {
         e.preventDefault()
         const idx = parseInt(key) - 1
         const reasons = uiStore.reasons
         if (idx < reasons.length) {
-          store.setReason(reasons[idx].value)
+          annStore.setReason(reasons[idx].value)
         }
       }
     }
 
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
-  }, [store, uiStore, sessionStore])
+  }, []) // Empty deps — handler is stable, reads state at event time
 }

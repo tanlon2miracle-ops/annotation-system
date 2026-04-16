@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 
 from config import PAGE_SIZE_DEFAULT, PAGE_SIZE_MAX
 from database import get_db
 from models import Annotation, AnnotationSession, Item
 from schemas import (
+    AnnotationOut,
     ItemWithAnnotation,
     PaginatedItems,
     ProgressOut,
@@ -69,40 +70,38 @@ def session_items(
     if not sess:
         raise HTTPException(404, "Session not found")
 
-    query = db.query(Item).filter(Item.batch_id == sess.batch_id)
+    # Build base query with LEFT JOIN to annotations — filter at SQL level
+    ann_alias = aliased(Annotation)
+    query = (
+        db.query(Item, ann_alias)
+        .outerjoin(
+            ann_alias,
+            (ann_alias.item_id == Item.id) & (ann_alias.session_id == session_id),
+        )
+        .filter(Item.batch_id == sess.batch_id)
+    )
 
     if sess.mode == "arbitration":
         query = query.filter(Item.result != Item.result_2)
+
+    # Status filter pushed down to SQL — consistent pagination
+    if status == "pending":
+        query = query.filter(ann_alias.id.is_(None))
+    elif status == "annotated":
+        query = query.filter(ann_alias.id.isnot(None), ann_alias.is_skipped == False)
+    elif status == "skipped":
+        query = query.filter(ann_alias.id.isnot(None), ann_alias.is_skipped == True)
+    elif status == "flagged":
+        query = query.filter(ann_alias.id.isnot(None), ann_alias.is_flagged == True)
 
     query = query.order_by(Item.id)
     total = query.count()
 
     offset = (page - 1) * page_size
-    items = query.offset(offset).limit(page_size).all()
-
-    ann_map: dict[int, Annotation] = {}
-    if items:
-        item_ids = [i.id for i in items]
-        anns = (
-            db.query(Annotation)
-            .filter(Annotation.session_id == session_id, Annotation.item_id.in_(item_ids))
-            .all()
-        )
-        ann_map = {a.item_id: a for a in anns}
+    rows = query.offset(offset).limit(page_size).all()
 
     result_items = []
-    for item in items:
-        ann = ann_map.get(item.id)
-
-        if status == "pending" and ann is not None:
-            continue
-        if status == "annotated" and (ann is None or ann.is_skipped):
-            continue
-        if status == "skipped" and (ann is None or not ann.is_skipped):
-            continue
-        if status == "flagged" and (ann is None or not ann.is_flagged):
-            continue
-
+    for item, ann in rows:
         item_dict = ItemWithAnnotation.model_validate(item)
 
         if sess.mode == "independent":
@@ -111,7 +110,6 @@ def session_items(
             item_dict.vote_result = None
 
         if ann:
-            from schemas import AnnotationOut
             item_dict.annotation = AnnotationOut.model_validate(ann)
 
         result_items.append(item_dict)
