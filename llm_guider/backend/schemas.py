@@ -91,56 +91,6 @@ class PaginatedModels(BaseModel):
     page_size: int
 
 
-# ---------- Routing ----------
-
-class RuleRoutingRequest(BaseModel):
-    modality: str | None = None
-    tags: list[str] = []
-    max_latency_ms: int | None = None
-    min_qps: int | None = None
-    status: str = "healthy"
-
-
-class NLRoutingRequest(BaseModel):
-    query: str
-
-
-class RoutingMatch(BaseModel):
-    model: ModelOut
-    score: float
-    match_reasons: list[str]
-
-
-class RoutingResponse(BaseModel):
-    matches: list[RoutingMatch]
-    log_id: int
-
-
-class RoutingLogOut(BaseModel):
-    id: int
-    query_type: str
-    query_text: str
-    matched_model_ids: list[str]
-    selected_model_id: str | None
-    created_at: datetime
-
-    model_config = {"from_attributes": True}
-
-    @field_validator("matched_model_ids", mode="before")
-    @classmethod
-    def _parse_ids(cls, v):
-        if isinstance(v, str):
-            return json.loads(v)
-        return v
-
-
-class PaginatedLogs(BaseModel):
-    items: list[RoutingLogOut]
-    total: int
-    page: int
-    page_size: int
-
-
 # ---------- Playground ----------
 
 class PlaygroundRequest(BaseModel):

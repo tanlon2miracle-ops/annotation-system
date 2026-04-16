@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import SessionLocal, init_db
-from routers import models_router, playground_router, routing_router, smart_router
+from routers import models_router, playground_router, smart_router
 from seed import seed_models
 
 
@@ -30,7 +30,6 @@ app.add_middleware(
 
 app.include_router(models_router.router, prefix="/api/v1")
 app.include_router(playground_router.router, prefix="/api/v1")
-app.include_router(routing_router.router, prefix="/api/v1")
 app.include_router(smart_router.router, prefix="/api/v1")
 
 

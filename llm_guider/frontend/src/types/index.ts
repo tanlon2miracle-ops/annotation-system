@@ -49,41 +49,6 @@ export interface ModelUpdate {
   output_schema?: Record<string, unknown>
 }
 
-export interface RoutingMatch {
-  model: ModelData
-  score: number
-  match_reasons: string[]
-}
-
-export interface RoutingResponse {
-  matches: RoutingMatch[]
-  log_id: number
-}
-
-export interface RuleRoutingRequest {
-  modality?: string
-  tags: string[]
-  max_latency_ms?: number
-  min_qps?: number
-  status: string
-}
-
-export interface RoutingLogData {
-  id: number
-  query_type: string
-  query_text: string
-  matched_model_ids: string[]
-  selected_model_id: string | null
-  created_at: string
-}
-
-export interface PaginatedLogs {
-  items: RoutingLogData[]
-  total: number
-  page: number
-  page_size: number
-}
-
 export interface PlaygroundResponse {
   output: Record<string, unknown>
   latency_ms: number

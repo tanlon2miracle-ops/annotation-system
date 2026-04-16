@@ -60,18 +60,6 @@ class ModelTag(Base):
     )
 
 
-class RoutingLog(Base):
-    __tablename__ = "routing_log"
-
-    id = Column(Integer, primary_key=True)
-    query_type = Column(String, nullable=False)
-    query_text = Column(Text, default="")
-    matched_model_ids = Column(Text, default="[]")
-    scores = Column(Text, default="{}")
-    selected_model_id = Column(String)
-    created_at = Column(DateTime, default=_utcnow)
-
-
 class SmartRoutingSession(Base):
     __tablename__ = "smart_routing_session"
 

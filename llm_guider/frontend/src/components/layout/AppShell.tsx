@@ -20,7 +20,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-6 text-sm font-medium">
             <NavLink to="/" className={linkClass}>模型目录</NavLink>
             <NavLink to="/smart" className={linkClass}>AI 路由</NavLink>
-            <NavLink to="/routing" className={linkClass}>规则路由</NavLink>
             <NavLink to="/logs" className={linkClass}>路由日志</NavLink>
           </div>
         </div>

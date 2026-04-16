@@ -18,14 +18,13 @@ NexusRegistry — 内部 ML 模型注册与智能路由平台。提供模型目�
 main.py              — FastAPI app, lifespan, CORS, router registration
 config.py            — DB paths, pagination, LLM env vars (LLM_BASE_URL, LLM_API_KEY, LLM_MODEL)
 database.py          — SQLAlchemy engine, session, WAL pragma
-models.py            — ORM: MLModel, ModelTag, RoutingLog, SmartRoutingSession, InvocationRecord
+models.py            — ORM: MLModel, ModelTag, SmartRoutingSession, InvocationRecord
 schemas.py           — Pydantic: CRUD schemas + smart routing schemas
 seed.py              — 4 seed models (spam, NSFW, intent, live audit)
 
 routers/
   models_router.py       — CRUD /api/v1/models
   playground_router.py   — POST /api/v1/playground/invoke (mock)
-  routing_router.py      — POST /api/v1/routing/rule, /nl (keyword-based, legacy)
   smart_router.py        — POST /api/v1/route/smart (SSE), GET history, GET detail
 
 services/
@@ -35,20 +34,18 @@ services/
   model_invoker.py               — [调用] async model invocation wrapper (mock_invoke)
   session_repo.py                — [持久化] SmartRoutingSession CRUD
   smart_router_orchestrator.py   — [编排] orchestrate() yields SSE events
-  routing_service.py             — legacy keyword-based NL/rule routing
   mock_inference.py              — mock model invocation with hardcoded responses
 ```
 
 ### Frontend (`frontend/src/`)
 
 ```
-App.tsx              — React Router: /, /smart, /routing, /logs
+App.tsx              — React Router: /, /smart, /logs
 api/client.ts        — fetch wrapper with get/post/put/del
 
 stores/
   modelStore.ts       — model list, search, pagination (Zustand)
   uiStore.ts          — drawer, playground state
-  routingStore.ts     — legacy rule/NL routing
   smartRoutingStore.ts — smart routing SSE state
 
 hooks/
@@ -57,8 +54,7 @@ hooks/
 pages/
   RegistryPage.tsx      — model catalog grid
   SmartRoutingPage.tsx  — AI smart routing (query → LLM → invoke)
-  RoutingPage.tsx       — legacy rule/NL routing
-  LogsPage.tsx          — routing logs
+  LogsPage.tsx          — smart routing history
 
 components/
   smart/QueryInput.tsx        — query textarea + example chips
@@ -135,6 +131,5 @@ MODEL_INVOKE_TIMEOUT_S=10                  # per-model invocation timeout
 
 - `ml_model` — model registry (model_id, name, modality, status, qps, latency_ms, input/output_schema)
 - `model_tag` — many-to-many tags
-- `routing_log` — legacy routing logs
 - `smart_routing_session` — smart routing sessions (query, reasoning, selected_models, latency, status)
 - `invocation_result` — per-model invocation results (input, output, latency, success)
